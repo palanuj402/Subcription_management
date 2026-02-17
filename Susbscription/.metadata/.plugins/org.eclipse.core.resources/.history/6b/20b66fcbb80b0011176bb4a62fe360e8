@@ -1,0 +1,57 @@
+package com.sub.subscripion.Subscription.exception;
+
+import java.time.LocalDateTime;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import jakarta.servlet.http.HttpServletRequest;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+	@ExceptionHandler(UserNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex,
+			HttpServletRequest request){
+		return buildResponse(ex,request,HttpStatus.NOT_FOUND);
+	}
+	
+	@ExceptionHandler(SubscriptionNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleSubscriptionNotFound(SubscriptionNotFoundException ex,
+			HttpServletRequest request){
+		return buildResponse(ex,request,HttpStatus.NOT_FOUND);
+	}
+	
+	@ExceptionHandler(SubscriptionAlreadyCancelled.class)
+	public ResponseEntity<ErrorResponse> handleSubscriptionAlreadyCancelled(SubscriptionAlreadyCancelled ex,
+			HttpServletRequest request){
+		return buildResponse(ex,request,HttpStatus.NOT_FOUND);
+	}
+	
+	@ExceptionHandler(PaymentFailedException.class)
+	public ResponseEntity<ErrorResponse> handlePaymentFailedException(PaymentFailedException ex,
+			HttpServletRequest request){
+		return buildResponse(ex,request,HttpStatus.NOT_FOUND);
+	}
+	
+	@ExceptionHandler(PlanNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handlePlanNotFoundException(PlanNotFoundException ex,
+			HttpServletRequest request){
+		return buildResponse(ex,request,HttpStatus.NOT_FOUND);
+	}	
+	
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ErrorResponse> handleGeneric(Exception ex,HttpServletRequest request){
+		return buildResponse(ex,request,HttpStatus.NOT_FOUND);
+	}
+	
+	private ResponseEntity<ErrorResponse> buildResponse(Exception ex, HttpServletRequest request,
+			HttpStatus status) {
+		ErrorResponse errorResponse = new ErrorResponse(LocalDateTime.now(), status.value(), status.name(), ex.getMessage(), request.getRequestURI());
+		return new ResponseEntity<>(errorResponse,status);
+	}
+
+	
+}

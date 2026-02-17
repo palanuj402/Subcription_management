@@ -1,0 +1,5 @@
+package com.sub.subscripion.Subscription.client;
+
+public class BillingClient {
+
+}

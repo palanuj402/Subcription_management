@@ -1,0 +1,94 @@
+package com.sub.subscripion.Subscription.service.impl;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import org.springframework.stereotype.Service;
+
+import com.sub.subscripion.Subscription.client.BillingClient;
+import com.sub.subscripion.Subscription.client.UserClient;
+import com.sub.subscripion.Subscription.dto.CreateSubscriptionRequest;
+import com.sub.subscripion.Subscription.dto.SubscriptionResponse;
+import com.sub.subscripion.Subscription.entity.Plan;
+import com.sub.subscripion.Subscription.entity.Subscription;
+import com.sub.subscripion.Subscription.entity.SubscriptionStatus;
+import com.sub.subscripion.Subscription.repository.PlanRepository;
+import com.sub.subscripion.Subscription.repository.SubscriptionRepository;
+import com.sub.subscripion.Subscription.service.SubscriptionService;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class SubscriptionServiceImpl implements SubscriptionService{
+
+	private final SubscriptionRepository subscriptionRepository;
+	
+	private final PlanRepository planRepository;
+	
+	private final BillingClient billingClient;
+	
+	private final UserClient userClient;
+	
+	@Override
+	@Transactional
+	public SubscriptionResponse createSubscription(CreateSubscriptionRequest createSubscriptionRequest) {
+
+		//first validate request 
+		Plan plan = planRepository.findById(createSubscriptionRequest.getPlanId())
+				.orElseThrow(() -> new RuntimeException("Plan not found"));
+		
+		//second create subscription  as created
+		Subscription subscription = Subscription.builder()
+				.userId(createSubscriptionRequest.getUserId())
+				.planId(createSubscriptionRequest.getPlanId())
+				.subscriptionStatus(SubscriptionStatus.CREATED)
+				.createdAt(LocalDateTime.now())
+				.build();
+		subscription = subscriptionRepository.save(subscription);
+		
+		if(!userClient.userExists(createSubscriptionRequest.getUserId())) {
+			throw new RuntimeException("User not found");
+		}
+		
+		boolean paymentStatus = billingClient.charge(createSubscriptionRequest.getUserId(),subscription.getId() ,plan.getPrice());
+		
+		if(paymentStatus == true) {
+			subscription.setSubscriptionStatus(SubscriptionStatus.ACTIVE);
+			subscription.setStartDate(LocalDate.now());
+			subscription.setEndDate(LocalDate.now().plusDays(plan.getDuratioInDays()));
+		}else {
+			subscription.setSubscriptionStatus(SubscriptionStatus.PAYMENT_FAILED);
+		}
+		
+		subscription = subscriptionRepository.save(subscription);
+		
+		return mapToResponse(subscription);
+	}
+
+	private SubscriptionResponse mapToResponse(Subscription subscription) {
+		
+		return SubscriptionResponse.builder()
+				.subscriptionId(subscription.getId())
+				.userId(subscription.getUserId())
+				.planId(subscription.getPlanId())
+				.status(subscription.getSubscriptionStatus().name())
+				.startDate(subscription.getStartDate())
+				.endDate(subscription.getEndDate())
+				.build();				
+	}
+
+	@Override
+	public SubscriptionResponse getSubscription(Long id) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public SubscriptionResponse cancelSubscription(Long id) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

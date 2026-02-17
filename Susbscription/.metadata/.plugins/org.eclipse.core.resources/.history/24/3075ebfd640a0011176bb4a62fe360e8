@@ -1,0 +1,5 @@
+package com.sub.subscripion.Subscription.config;
+
+public class RestTemplateConfig {
+
+}

@@ -1,0 +1,91 @@
+package com.sub.subscripion.Subscription.service.impl;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import org.springframework.stereotype.Service;
+
+import com.sub.subscripion.Subscription.client.BillingClient;
+import com.sub.subscripion.Subscription.client.UserClient;
+import com.sub.subscripion.Subscription.dto.CreateSubscriptionRequest;
+import com.sub.subscripion.Subscription.dto.SubscriptionResponse;
+import com.sub.subscripion.Subscription.entity.Plan;
+import com.sub.subscripion.Subscription.entity.Subscription;
+import com.sub.subscripion.Subscription.entity.SubscriptionStatus;
+import com.sub.subscripion.Subscription.exception.UserNotFoundException;
+import com.sub.subscripion.Subscription.repository.PlanRepository;
+import com.sub.subscripion.Subscription.repository.SubscriptionRepository;
+import com.sub.subscripion.Subscription.service.SubscriptionService;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class SubscriptionServiceImpl implements SubscriptionService{
+
+	private final SubscriptionRepository subscriptionRepository;
+	
+	private final PlanRepository planRepository;
+	
+	private final BillingClient billingClient;
+	
+	private final UserClient userClient;
+	
+	@Override
+	public SubscriptionResponse createSubscription(CreateSubscriptionRequest createSubscriptionRequest) {
+
+		//1. validate user via User Service
+		if(!userClient.userExists(createSubscriptionRequest.getUserId())) {
+			throw new UserNotFoundException("User not found with id: ");
+		}
+		
+		//2. Fetch Plans
+		Plan plan = planRepository.findById(createSubscriptionRequest.getPlanId())
+				.orElseThrow(() -> new RuntimeException("Plan not found"));
+		
+		//3. call payment service
+		boolean paymentStatus = billingClient.charge(createSubscriptionRequest.getUserId(),null ,plan.getPrice());
+		if(!paymentStatus) {
+			throw new RuntimeException("Payment failed");
+		}
+		
+		//4 create subscription
+		Subscription subscription = new Subscription();
+		subscription.setUserId(createSubscriptionRequest.getUserId());
+		subscription.setPlanId(createSubscriptionRequest.getPlanId());
+		subscription.setStartDate(LocalDate.now());
+		subscription.setEndDate(LocalDate.now().plusDays(plan.getDuratioInDays()));
+		subscription.setSubscriptionStatus(SubscriptionStatus.ACTIVE);
+				
+		subscription = subscriptionRepository.save(subscription);
+		
+		return mapToResponse(subscription);
+	}
+
+	private SubscriptionResponse mapToResponse(Subscription subscription) {
+		
+		return SubscriptionResponse.builder()
+				.subscriptionId(subscription.getId())
+				.userId(subscription.getUserId())
+				.planId(subscription.getPlanId())
+				.status(subscription.getSubscriptionStatus().name())
+				.startDate(subscription.getStartDate())
+				.endDate(subscription.getEndDate())
+				.build();				
+	}
+
+	@Override
+	public SubscriptionResponse getSubscription(Long id) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public SubscriptionResponse cancelSubscription(Long id) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

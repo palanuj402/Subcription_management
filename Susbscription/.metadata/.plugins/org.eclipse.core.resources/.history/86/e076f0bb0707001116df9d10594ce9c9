@@ -1,0 +1,5 @@
+package com.sub.subscripion.Subscription.repository;
+
+public interface PlanRepository {
+
+}

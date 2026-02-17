@@ -1,0 +1,5 @@
+package com.sub.subscripion.Subscription.service.impl;
+
+public class SubscriptionServiceImpl {
+
+}

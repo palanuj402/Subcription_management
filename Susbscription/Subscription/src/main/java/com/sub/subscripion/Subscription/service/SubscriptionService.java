@@ -1,0 +1,14 @@
+package com.sub.subscripion.Subscription.service;
+
+import com.sub.subscripion.Subscription.dto.CreateSubscriptionRequest;
+import com.sub.subscripion.Subscription.dto.SubscriptionResponse;
+
+public interface SubscriptionService {
+
+	SubscriptionResponse createSubscription(CreateSubscriptionRequest createSubscriptionRequest);
+	
+	SubscriptionResponse getSubscription(Long id);
+	
+	SubscriptionResponse cancelSubscription(Long id);
+	
+}

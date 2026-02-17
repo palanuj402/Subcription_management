@@ -1,0 +1,5 @@
+package com.sub.subscripion.Subscription.dto;
+
+public class SubscriptionResponse {
+
+}
